@@ -4,16 +4,15 @@ import { Arrow, Direction } from '../types';
 interface Props {
   arrow: Arrow;
   cellSize: number;
-  onClick: (id: string) => void;
 }
 
-export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
+export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize }) => {
   const { segments, direction, state, color } = arrow;
 
   // Calculate SVG path
   const pathData = useMemo(() => {
     if (segments.length === 0) return '';
-    
+
     const points = segments.map(p => ({
       x: p.c * cellSize + cellSize / 2,
       y: p.r * cellSize + cellSize / 2
@@ -25,7 +24,7 @@ export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
 
     // Draw line to head
     for (let i = points.length - 2; i >= 0; i--) {
-        d += ` L ${points[i].x} ${points[i].y}`;
+      d += ` L ${points[i].x} ${points[i].y}`;
     }
 
     return d;
@@ -36,7 +35,7 @@ export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
     x: headPos.c * cellSize + cellSize / 2,
     y: headPos.r * cellSize + cellSize / 2
   };
-  
+
   const tailPos = segments[segments.length - 1];
   const tailPixel = {
     x: tailPos.c * cellSize + cellSize / 2,
@@ -51,47 +50,34 @@ export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
     case Direction.RIGHT: rot = 0; break;
   }
 
-  const animClass = state === 'stuck' ? 'animate-shake' : 'transition-transform duration-100 active:scale-95';
+  const animClass = state === 'stuck' ? 'animate-shake' : '';
 
   return (
-    <g 
-      onClick={(e) => { e.stopPropagation(); onClick(arrow.id); }} 
-      className={`cursor-pointer ${animClass} group`}
-      style={{ pointerEvents: 'all' }} 
-    >
-      {/* HITBOX - Significantly increased for better touch response */}
-      <path 
-        d={pathData} 
-        stroke="transparent" 
-        strokeWidth={cellSize * 1.4} 
-        fill="none" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      />
-      
+    <g className={animClass}>
+
       {/* Outline (White Border) */}
-      <path 
-        d={pathData} 
-        stroke="white" 
-        strokeWidth={cellSize * 0.6} 
-        fill="none" 
-        strokeLinecap="round" 
+      <path
+        d={pathData}
+        stroke="white"
+        strokeWidth={cellSize * 0.6}
+        fill="none"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
 
       {/* Main Body (Navy/Color) */}
-      <path 
-        d={pathData} 
-        stroke={color} 
-        strokeWidth={cellSize * 0.4} 
-        fill="none" 
-        strokeLinecap="round" 
+      <path
+        d={pathData}
+        stroke={color}
+        strokeWidth={cellSize * 0.4}
+        fill="none"
+        strokeLinecap="round"
         strokeLinejoin="round"
         className="drop-shadow-sm"
       />
 
       {/* Tail Dot (Solid Circle) */}
-      <circle 
+      <circle
         cx={tailPixel.x}
         cy={tailPixel.y}
         r={cellSize * 0.2}
@@ -103,14 +89,14 @@ export const SnakeArrow: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
       {/* Head (Triangle) */}
       <g transform={`translate(${headPixel.x}, ${headPixel.y}) rotate(${rot})`}>
         {/* White backing for head to cover line end */}
-        <path 
-            d={`M -${cellSize * 0.1} -${cellSize * 0.25} L ${cellSize * 0.35} 0 L -${cellSize * 0.1} ${cellSize * 0.25} Z`}
-            fill="white"
+        <path
+          d={`M -${cellSize * 0.1} -${cellSize * 0.25} L ${cellSize * 0.35} 0 L -${cellSize * 0.1} ${cellSize * 0.25} Z`}
+          fill="white"
         />
         {/* Colored Arrow Head */}
-        <path 
-            d={`M -${cellSize * 0.05} -${cellSize * 0.2} L ${cellSize * 0.3} 0 L -${cellSize * 0.05} ${cellSize * 0.2} Z`}
-            fill={color}
+        <path
+          d={`M -${cellSize * 0.05} -${cellSize * 0.2} L ${cellSize * 0.3} 0 L -${cellSize * 0.05} ${cellSize * 0.2} Z`}
+          fill={color}
         />
       </g>
     </g>

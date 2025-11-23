@@ -25,9 +25,9 @@ export const useGameLogic = () => {
 
   // Initialize Level
   const loadLevel = useCallback((level: number) => {
-    // Clear intervals
-    clearInterval(moveIntervalRef.current);
-    
+    // DO NOT clear moveInterval here, as the useEffect with [] deps won't restart it!
+    // The movement loop handles state changes gracefully via setGameState updater.
+
     const { arrows, rows, cols } = generateLevel(level);
     setGameState(prev => ({
       ...prev,
@@ -82,7 +82,7 @@ export const useGameLogic = () => {
           arrow.segments.pop();
 
           // Check off-screen
-          const isOffScreen = arrow.segments.every(seg => 
+          const isOffScreen = arrow.segments.every(seg =>
             seg.r < 0 || seg.r >= prev.gridRows || seg.c < 0 || seg.c >= prev.gridCols
           );
 
@@ -97,14 +97,14 @@ export const useGameLogic = () => {
 
         // Win Condition
         if (remainingArrows.length === 0 && prev.arrows.length > 0) {
-            Sound.playWin();
-            setTimeout(() => nextLevel(), 500);
-            return {
-                ...prev,
-                arrows: remainingArrows,
-                status: 'won',
-                score: prev.score + (prev.level * 100)
-            };
+          Sound.playWin();
+          setTimeout(() => nextLevel(), 500);
+          return {
+            ...prev,
+            arrows: remainingArrows,
+            status: 'won',
+            score: prev.score + (prev.level * 100)
+          };
         }
 
         return {
@@ -119,12 +119,12 @@ export const useGameLogic = () => {
 
   const nextLevel = () => {
     setGameState(prev => {
-        const nextLvl = prev.level + 1;
-        // Small delay to allow react to render the won state for a split second if needed, 
-        // but typically we want to load immediately after the timeout in the loop.
-        // However, we need to break the render cycle.
-        setTimeout(() => loadLevel(nextLvl), 0);
-        return prev;
+      const nextLvl = prev.level + 1;
+      // Small delay to allow react to render the won state for a split second if needed, 
+      // but typically we want to load immediately after the timeout in the loop.
+      // However, we need to break the render cycle.
+      setTimeout(() => loadLevel(nextLvl), 0);
+      return prev;
     });
   };
 
@@ -138,70 +138,70 @@ export const useGameLogic = () => {
 
     // Find the arrow in current state to ensure we have fresh data
     setGameState(current => {
-        const arrow = current.arrows.find(a => a.id === arrowId);
-        if (!arrow || arrow.state !== 'idle') return current;
+      const arrow = current.arrows.find(a => a.id === arrowId);
+      if (!arrow || arrow.state !== 'idle') return current;
 
-        // VALIDATION
-        let pathBlocked = false;
-        let currentPos = { ...arrow.segments[0] }; 
-        const offset = DIR_OFFSETS[arrow.direction];
-        
-        let steps = 0;
-        const maxSteps = Math.max(current.gridRows, current.gridCols);
+      // VALIDATION
+      let pathBlocked = false;
+      let currentPos = { ...arrow.segments[0] };
+      const offset = DIR_OFFSETS[arrow.direction];
 
-        while (steps < maxSteps) {
-          currentPos.r += offset.r;
-          currentPos.c += offset.c;
-          steps++;
+      let steps = 0;
+      const maxSteps = Math.max(current.gridRows, current.gridCols);
 
-          if (currentPos.r < 0 || currentPos.r >= current.gridRows || currentPos.c < 0 || currentPos.c >= current.gridCols) {
-            break; 
-          }
+      while (steps < maxSteps) {
+        currentPos.r += offset.r;
+        currentPos.c += offset.c;
+        steps++;
 
-          // Collision check
-          for (const other of current.arrows) {
-            if (other.id === arrow.id) continue;
-            // Moving arrows are not obstacles (they are flying away)
-            if (other.state === 'moving') continue; 
+        if (currentPos.r < 0 || currentPos.r >= current.gridRows || currentPos.c < 0 || currentPos.c >= current.gridCols) {
+          break;
+        }
 
-            for (const seg of other.segments) {
-              if (seg.r === currentPos.r && seg.c === currentPos.c) {
-                pathBlocked = true;
-                break;
-              }
+        // Collision check
+        for (const other of current.arrows) {
+          if (other.id === arrow.id) continue;
+          // Moving arrows are not obstacles (they are flying away)
+          if (other.state === 'moving') continue;
+
+          for (const seg of other.segments) {
+            if (seg.r === currentPos.r && seg.c === currentPos.c) {
+              pathBlocked = true;
+              break;
             }
-            if (pathBlocked) break;
           }
           if (pathBlocked) break;
         }
+        if (pathBlocked) break;
+      }
 
-        if (pathBlocked) {
-          Sound.playError();
-          const newHp = current.hp - 1;
-          
-          // Mark as stuck temporarily
-          const newArrows = current.arrows.map(a => a.id === arrowId ? { ...a, state: 'stuck' as const } : a);
+      if (pathBlocked) {
+        Sound.playError();
+        const newHp = current.hp - 1;
 
-          // Trigger reset of stuck state after delay
-          setTimeout(() => {
-            setGameState(g => ({
-                ...g,
-                arrows: g.arrows.map(a => a.id === arrowId ? { ...a, state: 'idle' as const } : a)
-            }));
-          }, 500);
+        // Mark as stuck temporarily
+        const newArrows = current.arrows.map(a => a.id === arrowId ? { ...a, state: 'stuck' as const } : a);
 
-          return {
-            ...current,
-            hp: newHp,
-            arrows: newArrows,
-            status: newHp <= 0 ? 'lost' : 'playing'
-          };
+        // Trigger reset of stuck state after delay
+        setTimeout(() => {
+          setGameState(g => ({
+            ...g,
+            arrows: g.arrows.map(a => a.id === arrowId ? { ...a, state: 'idle' as const } : a)
+          }));
+        }, 500);
 
-        } else {
-          Sound.playSwoosh();
-          const newArrows = current.arrows.map(a => a.id === arrowId ? { ...a, state: 'moving' as const } : a);
-          return { ...current, arrows: newArrows };
-        }
+        return {
+          ...current,
+          hp: newHp,
+          arrows: newArrows,
+          status: newHp <= 0 ? 'lost' : 'playing'
+        };
+
+      } else {
+        Sound.playSwoosh();
+        const newArrows = current.arrows.map(a => a.id === arrowId ? { ...a, state: 'moving' as const } : a);
+        return { ...current, arrows: newArrows };
+      }
     });
   };
 
