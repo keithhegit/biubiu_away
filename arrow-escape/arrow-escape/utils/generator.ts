@@ -13,16 +13,43 @@ const isOccupied = (p: Point, occupied: Set<string>) => {
 
 export const generateLevel = (level: number): { arrows: Arrow[], rows: number, cols: number } => {
   // Config
-  const isHard = level > 1;
-  const rows = isHard ? 24 : 12;
-  const cols = isHard ? 14 : 9;
-  
-  // Density: aim high for level 2+
-  // We stop if we fail to place snakes too many times, or reach a count
-  const targetSnakes = isHard ? 42 : 15; 
-  const minLen = isHard ? 3 : 2;
-  const maxLen = isHard ? 16 : 5; // Increased max length for complex shapes
-  const turnChance = isHard ? 0.4 : 0.2;
+  let rows = 12;
+  let cols = 9;
+  let targetSnakes = 15;
+  let minLen = 2;
+  let maxLen = 5;
+  let turnChance = 0.2;
+
+  // Difficulty Tiers
+  if (level === 1) {
+    // Tutorial
+    rows = 12; cols = 9; targetSnakes = 15;
+  } else if (level <= 10) {
+    // Standard (Level 2-10)
+    rows = 24; cols = 14;
+    // Scale snakes from 30 to 50
+    targetSnakes = 30 + Math.floor((level - 2) * 2.5);
+    maxLen = 12; turnChance = 0.4;
+  } else if (level <= 20) {
+    // Large (Level 11-20)
+    rows = 30; cols = 20;
+    targetSnakes = 60 + (level - 11) * 3;
+    maxLen = 16; turnChance = 0.5;
+  } else if (level <= 30) {
+    // Huge (Level 21-30)
+    rows = 40; cols = 25;
+    targetSnakes = 90 + (level - 21) * 4;
+    maxLen = 20; turnChance = 0.6;
+  } else {
+    // Gigantic (Level 31-50)
+    rows = 50; cols = 30;
+    targetSnakes = 130 + (level - 31) * 5; // Up to ~225 snakes!
+    maxLen = 25; turnChance = 0.7;
+  }
+
+  // Cap target snakes to avoid infinite loops if grid is too full
+  const totalCells = rows * cols;
+  targetSnakes = Math.min(targetSnakes, Math.floor(totalCells * 0.4)); // Max 40% density
 
   const arrows: Arrow[] = [];
   const occupied = new Set<string>(); // "r,c" string
@@ -57,36 +84,36 @@ export const generateLevel = (level: number): { arrows: Arrow[], rows: number, c
     const potentialSegments: Point[] = [head];
     let curr = head;
     let currGrowthDir = growthDirStart;
-    
+
     const len = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
     let validBody = true;
 
     for (let i = 1; i < len; i++) {
-        // Maybe turn
-        if (Math.random() < turnChance) {
-             const dirs = DIRECTIONS.filter(d => d !== currGrowthDir && d !== getOppositeDir(currGrowthDir));
-             currGrowthDir = dirs[Math.floor(Math.random() * dirs.length)];
-        }
+      // Maybe turn
+      if (Math.random() < turnChance) {
+        const dirs = DIRECTIONS.filter(d => d !== currGrowthDir && d !== getOppositeDir(currGrowthDir));
+        currGrowthDir = dirs[Math.floor(Math.random() * dirs.length)];
+      }
 
-        const next = {
-            r: curr.r + DIR_OFFSETS[currGrowthDir].r,
-            c: curr.c + DIR_OFFSETS[currGrowthDir].c
-        };
+      const next = {
+        r: curr.r + DIR_OFFSETS[currGrowthDir].r,
+        c: curr.c + DIR_OFFSETS[currGrowthDir].c
+      };
 
-        if (!isValidPos(next, rows, cols) || isOccupied(next, occupied)) {
-            // Hit wall or existing snake
-            validBody = false;
-            break; 
-        }
+      if (!isValidPos(next, rows, cols) || isOccupied(next, occupied)) {
+        // Hit wall or existing snake
+        validBody = false;
+        break;
+      }
 
-        // Self-intersection check
-        if (potentialSegments.some(s => s.r === next.r && s.c === next.c)) {
-            validBody = false;
-            break;
-        }
+      // Self-intersection check
+      if (potentialSegments.some(s => s.r === next.r && s.c === next.c)) {
+        validBody = false;
+        break;
+      }
 
-        potentialSegments.push(next);
-        curr = next;
+      potentialSegments.push(next);
+      curr = next;
     }
 
     if (!validBody) continue;
@@ -97,47 +124,47 @@ export const generateLevel = (level: number): { arrows: Arrow[], rows: number, c
     const newSnakeCells = new Set(potentialSegments.map(p => `${p.r},${p.c}`));
 
     for (const existing of arrows) {
-        // Trace existing snake's path to edge
-        let p = { ...existing.segments[0] }; // Head
-        const dir = existing.direction;
-        const dOffset = DIR_OFFSETS[dir];
-        
-        let blocked = false;
-        
-        // Walk until edge
-        while (true) {
-            p = { r: p.r + dOffset.r, c: p.c + dOffset.c };
-            if (!isValidPos(p, rows, cols)) break; // Reached edge safely
+      // Trace existing snake's path to edge
+      let p = { ...existing.segments[0] }; // Head
+      const dir = existing.direction;
+      const dOffset = DIR_OFFSETS[dir];
 
-            // Does this path cell overlap with the NEW snake?
-            if (newSnakeCells.has(`${p.r},${p.c}`)) {
-                blocked = true;
-                break;
-            }
-        }
+      let blocked = false;
 
-        if (blocked) {
-            blocksExisting = true;
-            break;
+      // Walk until edge
+      while (true) {
+        p = { r: p.r + dOffset.r, c: p.c + dOffset.c };
+        if (!isValidPos(p, rows, cols)) break; // Reached edge safely
+
+        // Does this path cell overlap with the NEW snake?
+        if (newSnakeCells.has(`${p.r},${p.c}`)) {
+          blocked = true;
+          break;
         }
+      }
+
+      if (blocked) {
+        blocksExisting = true;
+        break;
+      }
     }
 
     if (blocksExisting) {
-        // Invalid placement, would create a deadlock or make an existing puzzle impossible
-        continue;
+      // Invalid placement, would create a deadlock or make an existing puzzle impossible
+      continue;
     }
 
     // 5. Success! Add snake.
     potentialSegments.forEach(p => occupied.add(`${p.r},${p.c}`));
     arrows.push({
-        id: `arrow-${level}-${arrows.length}`,
-        segments: potentialSegments,
-        direction: exitDir,
-        state: 'idle',
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        length: potentialSegments.length
+      id: `arrow-${level}-${arrows.length}`,
+      segments: potentialSegments,
+      direction: exitDir,
+      state: 'idle',
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      length: potentialSegments.length
     });
   }
-  
+
   return { arrows, rows, cols };
 };

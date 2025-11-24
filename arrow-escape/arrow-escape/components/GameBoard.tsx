@@ -12,6 +12,7 @@ interface Props {
 export const GameBoard: React.FC<Props> = ({ gameState, onArrowClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(30);
+  const [scale, setScale] = useState(1.0);
 
   // Responsive Grid Sizing
   useEffect(() => {
@@ -30,6 +31,9 @@ export const GameBoard: React.FC<Props> = ({ gameState, onArrowClick }) => {
 
       // Use the smaller dimension to fit the grid perfectly
       setCellSize(Math.min(sizeByWidth, sizeByHeight));
+
+      // Reset scale on level change or resize
+      setScale(1.0);
     };
 
     updateSize();
@@ -43,8 +47,12 @@ export const GameBoard: React.FC<Props> = ({ gameState, onArrowClick }) => {
 
     const svg = e.currentTarget;
     const rect = svg.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+
+    // Adjust click coordinates for scale
+    // When scaled up (e.g. 2x), the visual pixels are larger, so we need to divide by scale
+    // to get back to the SVG coordinate system
+    const clickX = (e.clientX - rect.left) / scale;
+    const clickY = (e.clientY - rect.top) / scale;
 
     // Calculate distances to all idle arrows
     const distances = gameState.arrows
@@ -71,12 +79,30 @@ export const GameBoard: React.FC<Props> = ({ gameState, onArrowClick }) => {
   const width = cellSize * gameState.gridCols;
   const height = cellSize * gameState.gridRows;
 
+  // Zoom Handlers
+  const handleZoomIn = () => setScale(s => Math.min(s + 0.2, 3.0));
+  const handleZoomOut = () => setScale(s => Math.max(s - 0.2, 0.5));
+  const handleResetZoom = () => setScale(1.0);
+
   return (
     <div ref={containerRef} className="flex-1 w-full h-full flex items-center justify-center overflow-hidden relative bg-paper">
 
-      {/* Grid Container */}
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 bg-white/80 p-2 rounded-lg shadow-md backdrop-blur-sm">
+        <button onClick={handleZoomIn} className="p-2 hover:bg-blue-100 rounded-full" title="Zoom In">➕</button>
+        <button onClick={handleResetZoom} className="p-2 hover:bg-blue-100 rounded-full text-xs font-bold" title="Reset">1:1</button>
+        <button onClick={handleZoomOut} className="p-2 hover:bg-blue-100 rounded-full" title="Zoom Out">➖</button>
+      </div>
+
+      {/* Grid Container with Scale Transform */}
       <div
-        style={{ width, height }}
+        style={{
+          width,
+          height,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.2s ease-out'
+        }}
         className="relative bg-white/50 shadow-sm"
       >
         {/* Background Grid Layer */}
