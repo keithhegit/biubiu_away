@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameBoard } from './components/GameBoard';
+import { ZoomTutorial } from './components/ZoomTutorial';
 import { useGameStore } from './store/useGameStore';
 
 const App: React.FC = () => {
@@ -67,6 +68,9 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Zoom Tutorial - Show on level 2+ */}
+      {level >= 2 && <ZoomTutorial />}
     </div>
   );
 };

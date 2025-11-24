@@ -12,6 +12,10 @@ const isOccupied = (p: Point, occupied: Set<string>) => {
 };
 
 export const generateLevel = (level: number): { arrows: Arrow[], rows: number, cols: number } => {
+  // Difficulty Shifting: Level 2 → Old Level 10, Level 3 → 11, etc.
+  // This skips the tutorial difficulty tier for all levels after 1
+  const adjustedLevel = level === 1 ? 1 : Math.min(level + 8, 50);
+
   // Config
   let rows = 12;
   let cols = 9;
@@ -20,30 +24,30 @@ export const generateLevel = (level: number): { arrows: Arrow[], rows: number, c
   let maxLen = 5;
   let turnChance = 0.2;
 
-  // Difficulty Tiers
-  if (level === 1) {
-    // Tutorial
+  // Difficulty Tiers (using adjustedLevel)
+  if (adjustedLevel === 1) {
+    // Tutorial (Only Level 1)
     rows = 12; cols = 9; targetSnakes = 15;
-  } else if (level <= 10) {
-    // Standard (Level 2-10)
+    maxLen = 5; turnChance = 0.2;
+  } else if (adjustedLevel <= 10) {
+    // Standard (Adjusted Level 2-10, which is Original Level 10-18)
     rows = 24; cols = 14;
-    // Scale snakes from 30 to 50
-    targetSnakes = 30 + Math.floor((level - 2) * 2.5);
+    targetSnakes = 30 + Math.floor((adjustedLevel - 2) * 2.5);
     maxLen = 12; turnChance = 0.4;
-  } else if (level <= 20) {
-    // Large (Level 11-20)
+  } else if (adjustedLevel <= 20) {
+    // Large (Adjusted Level 11-20, which is Original Level 19-28)
     rows = 30; cols = 20;
-    targetSnakes = 60 + (level - 11) * 3;
+    targetSnakes = 60 + (adjustedLevel - 11) * 3;
     maxLen = 16; turnChance = 0.5;
-  } else if (level <= 30) {
-    // Huge (Level 21-30)
+  } else if (adjustedLevel <= 30) {
+    // Huge (Adjusted Level 21-30, which is Original Level 29-38)
     rows = 40; cols = 25;
-    targetSnakes = 90 + (level - 21) * 4;
+    targetSnakes = 90 + (adjustedLevel - 21) * 4;
     maxLen = 20; turnChance = 0.6;
   } else {
-    // Gigantic (Level 31-50)
+    // Gigantic (Adjusted Level 31+, which is Original Level 39-50)
     rows = 50; cols = 30;
-    targetSnakes = 130 + (level - 31) * 5; // Up to ~225 snakes!
+    targetSnakes = 130 + (adjustedLevel - 31) * 5; // Up to ~225 snakes!
     maxLen = 50; turnChance = 0.7;
   }
 
