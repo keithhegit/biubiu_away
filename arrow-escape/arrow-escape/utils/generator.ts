@@ -18,6 +18,48 @@ export const generateLevel = (level: number): { arrows: Arrow[], rows: number, c
 
   // Config
   let rows = 12;
+  let cols = 9;
+  let targetSnakes = 15;
+  let minLen = 2;
+  let maxLen = 5;
+  let turnChance = 0.2;
+
+  // Difficulty Tiers - MASSIVELY INCREASED
+  if (adjustedLevel === 1) {
+    // Tutorial (Only Level 1)
+    rows = 12; cols = 9; targetSnakes = 15;
+    maxLen = 5; turnChance = 0.2;
+  } else if (adjustedLevel <= 10) {
+    // Standard (Adjusted Level 2-10)
+    rows = 24; cols = 14;
+    targetSnakes = 60 + Math.floor((adjustedLevel - 2) * 10); // 60-140
+    maxLen = 20; turnChance = 0.6;
+  } else if (adjustedLevel <= 20) {
+    // Large (Adjusted Level 11-20)
+    rows = 35; cols = 22;
+    targetSnakes = 140 + (adjustedLevel - 11) * 15; // 140-275
+    maxLen = 40; turnChance = 0.75;
+  } else if (adjustedLevel <= 35) {
+    // Huge (Adjusted Level 21-35)
+    rows = 45; cols = 28;
+    targetSnakes = 275 + (adjustedLevel - 21) * 20; // 275-555
+    maxLen = 60; turnChance = 0.85;
+  } else {
+    // Gigantic (Adjusted Level 36-50) - EXTREME DENSITY
+    rows = 55; cols = 34;
+    targetSnakes = 400 + (adjustedLevel - 36) * 25; // 400-750!
+    maxLen = 100; turnChance = 0.92; // Very winding
+  }
+
+  // Cap target snakes - increased density cap to 65%
+  const totalCells = rows * cols;
+  targetSnakes = Math.min(targetSnakes, Math.floor(totalCells * 0.65));
+
+  const arrows: Arrow[] = [];
+  const occupied = new Set<string>(); // "r,c" string
+
+  let attempts = 0;
+  const maxAttempts = 10000;
 
   // GENERATION ALGORITHM: "Safe Stacking"
   // We place snakes one by one. 
