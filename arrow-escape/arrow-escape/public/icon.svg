@@ -1,4 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1a237e" rx="100"/>
-  <path d="M256 100 L350 200 L300 200 L300 400 L212 400 L212 200 L162 200 Z" fill="#ffffff"/>
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Snake-coiled arrow icon -->
+  <defs>
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a237e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d47a1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Coiled snake-like path -->
+  <path d="M 50 10 
+           Q 70 20, 70 40
+           Q 70 60, 50 65
+           Q 30 70, 25 50
+           Q 20 30, 40 25
+           Q 55 22, 55 35
+           Q 55 45, 45 48"
+        fill="none" 
+        stroke="url(#arrowGradient)" 
+        stroke-width="8" 
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  
+  <!-- Arrow head pointing outward -->
+  <path d="M 45 48 L 38 42 L 42 50 L 38 58 Z"
+        fill="url(#arrowGradient)"/>
+  
+  <!-- Decorative circle at the center -->
+  <circle cx="50" cy="50" r="3" fill="white" opacity="0.8"/>
 </svg>
