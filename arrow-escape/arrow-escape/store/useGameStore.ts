@@ -11,7 +11,6 @@ interface GameStore extends GameState {
     loadLevel: (level: number) => void;
     clickArrow: (arrowId: string) => void;
     updateGameLoop: () => void;
-    setZoom: (scale: number) => void;
     resetLevel: () => void;
     nextLevel: () => void;
     lastMoveTime: number;
@@ -53,6 +52,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         get().loadLevel(nextLvl);
     },
 
+    resetLevel: () => {
+        const { level } = get();
+        get().loadLevel(level);
+    },
+
     clickArrow: (arrowId: string) => {
         const { status, arrows, hp, gridRows, gridCols } = get();
         if (status !== 'playing') return;
@@ -78,6 +82,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
             // Play error sound
             Sound.playError();
+
+            // Play lost sound if game over
+            const newHp = get().hp;
+            if (newHp === 0) {
+                Sound.playLost();
+            }
 
             // Reset stuck state after animation
             setTimeout(() => {

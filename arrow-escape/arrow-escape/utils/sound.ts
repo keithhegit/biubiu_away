@@ -1,34 +1,32 @@
 // Simple Web Audio API wrapper to avoid external assets
-let audioCtx: AudioContext | null = null;
-
-const getCtx = () => {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  return audioCtx;
+// External audio file URLs
+const SOUND_URLS = {
+  swoosh: 'https://taira-komori.net/sound_os2/arms01/laser4.mp3',
+  error: 'https://taira-komori.net/sound_os2/game01/blip01.mp3',
+  win: 'https://taira-komori.net/sound_os2/anime01/fanfare2.mp3',
+  lost: 'https://pub-4785f27b55bc484db8005d5841a1735a.r2.dev/failure3s.wav'
 };
+
+// Preload audio
+const audioCache: Record<string, HTMLAudioElement> = {};
+
+const loadAudio = (key: keyof typeof SOUND_URLS) => {
+  if (!audioCache[key]) {
+    audioCache[key] = new Audio(SOUND_URLS[key]);
+    audioCache[key].preload = 'auto';
+  }
+  return audioCache[key];
+};
+
+// Preload all sounds
+Object.keys(SOUND_URLS).forEach(key => loadAudio(key as keyof typeof SOUND_URLS));
 
 export const playSwoosh = () => {
   try {
-    const ctx = getCtx();
-    if (ctx.state === 'suspended') ctx.resume();
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // "Biu!" - Short, punchy sound
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.05); // Quick rise
-    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.12);  // Quick drop
-
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.12);
+    const audio = loadAudio('swoosh');
+    audio.currentTime = 0; // Reset to start
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Audio play failed", e));
   } catch (e) {
     console.error("Audio play failed", e);
   }
@@ -36,23 +34,10 @@ export const playSwoosh = () => {
 
 export const playError = () => {
   try {
-    const ctx = getCtx();
-    if (ctx.state === 'suspended') ctx.resume();
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.15);
-
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.15);
+    const audio = loadAudio('error');
+    audio.currentTime = 0;
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Audio play failed", e));
   } catch (e) {
     console.error("Audio play failed", e);
   }
@@ -60,23 +45,22 @@ export const playError = () => {
 
 export const playWin = () => {
   try {
-    const ctx = getCtx();
-    if (ctx.state === 'suspended') ctx.resume();
-
-    // Arpeggio
-    [0, 0.1, 0.2].forEach((delay, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440 + (i * 110), ctx.currentTime + delay);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay + 0.3);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.3);
-    });
+    const audio = loadAudio('win');
+    audio.currentTime = 0;
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Audio play failed", e));
   } catch (e) {
-    console.error(e);
+    console.error("Audio play failed", e);
+  }
+};
+
+export const playLost = () => {
+  try {
+    const audio = loadAudio('lost');
+    audio.currentTime = 0;
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error("Audio play failed", e));
+  } catch (e) {
+    console.error("Audio play failed", e);
   }
 };
