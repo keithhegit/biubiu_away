@@ -5,7 +5,7 @@ import { useGameStore } from '../store/useGameStore';
 import { ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 export const GameBoard: React.FC = () => {
-  const { arrows, grid, loadLevel, clickArrow, updateGameLoop, level } = useGameStore();
+  const { arrows, gridRows, gridCols, loadLevel, clickArrow, updateGameLoop, level } = useGameStore();
   const [scale, setScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>();
@@ -31,8 +31,8 @@ export const GameBoard: React.FC = () => {
 
   // Calculate board dimensions
   const cellSize = 40; // Fixed cell size for better SVG rendering
-  const width = grid.cols * cellSize;
-  const height = grid.rows * cellSize;
+  const width = gridCols * cellSize;
+  const height = gridRows * cellSize;
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-[#f5f6fa] flex items-center justify-center">
