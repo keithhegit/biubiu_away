@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
           ]
         },
         manifest: {
-          name: 'Arrow Escape',
-          short_name: 'ArrowEscape',
+          name: 'BiuBiu',
+          short_name: 'BiuBiu',
           description: 'A puzzle game about escaping arrows',
           theme_color: '#f5f6fa',
           icons: [
