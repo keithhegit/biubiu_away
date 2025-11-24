@@ -53,7 +53,13 @@ const App: React.FC = () => {
               {status === 'won' ? 'Great job! Ready for the next challenge?' : 'Don\'t give up! Try again.'}
             </p>
             <button
-              onClick={() => useGameStore.getState().resetLevel()}
+              onClick={() => {
+                if (status === 'won') {
+                  useGameStore.getState().nextLevel();
+                } else {
+                  useGameStore.getState().resetLevel();
+                }
+              }}
               className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors shadow-lg shadow-blue-600/20"
             >
               {status === 'won' ? 'Next Level' : 'Try Again'}

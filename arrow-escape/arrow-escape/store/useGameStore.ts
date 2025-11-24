@@ -12,6 +12,7 @@ interface GameStore extends GameState {
     updateGameLoop: () => void;
     setZoom: (scale: number) => void;
     resetLevel: () => void;
+    nextLevel: () => void;
     lastMoveTime: number;
 }
 
@@ -44,17 +45,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
     },
 
-    resetLevel: () => {
+    nextLevel: () => {
         const { level } = get();
-        get().loadLevel(level);
-    },
-
-    setZoom: (scale: number) => {
-        // UI state
+        const nextLvl = level + 1;
+        set({ level: nextLvl });
+        get().loadLevel(nextLvl);
     },
 
     clickArrow: (arrowId: string) => {
-        const { status, arrows, hp } = get();
+        const { status, arrows, hp, gridRows, gridCols } = get();
         if (status !== 'playing') return;
 
         const arrowIndex = arrows.findIndex(a => a.id === arrowId);
@@ -63,8 +62,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const arrow = arrows[arrowIndex];
         if (arrow.state !== 'idle') return;
 
-        // Simplified collision check for this step
-        const isBlocked = checkCollision(arrow, arrows);
+        // Collision check
+        const isBlocked = checkCollision(arrow, arrows, gridRows, gridCols);
 
         if (isBlocked) {
             // Stuck logic
@@ -75,6 +74,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 hp: Math.max(0, state.hp - 1),
                 status: state.hp - 1 <= 0 ? 'lost' : 'playing'
             }));
+
+            // Play error sound (placeholder for now, or use Sound util if available)
+            // Sound.playError(); 
 
             // Reset stuck state after animation
             setTimeout(() => {
@@ -91,6 +93,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             const newArrows = [...arrows];
             newArrows[arrowIndex] = { ...arrow, state: 'moving' };
             set({ arrows: newArrows });
+            // Sound.playSwoosh();
         }
     },
 
@@ -99,7 +102,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (status !== 'playing') return;
 
         const now = performance.now();
-        const MOVE_INTERVAL = 50; // ms per step
+        const MOVE_INTERVAL = 30; // 30ms = ~33fps (Matches original speed)
 
         if (now - lastMoveTime < MOVE_INTERVAL) return;
 
@@ -142,29 +145,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
             // Check win condition
             if (newArrows.length === 0) {
                 set({ status: 'won' });
+                // Sound.playWin();
             }
         }
     }
 }));
 
-// Helper for collision (simplified port from useGameLogic)
-function checkCollision(targetArrow: Arrow, allArrows: Arrow[]): boolean {
-    // ... logic to be ported fully ...
-    // For this initial step, I'll just return false to test the store structure
-    // Real implementation needs the full geometry check
+// Helper for collision
+function checkCollision(targetArrow: Arrow, allArrows: Arrow[], rows: number, cols: number): boolean {
+    let currentPos = { ...targetArrow.segments[0] }; // Start at head
+    const offset = DIR_OFFSETS[targetArrow.direction];
+    const maxSteps = Math.max(rows, cols);
 
-    // Porting the logic from useGameLogic.ts
-    const { segments, direction } = targetArrow;
-    const head = segments[0];
-    const offset = DIR_OFFSETS[direction];
+    for (let i = 0; i < maxSteps; i++) {
+        currentPos.r += offset.r;
+        currentPos.c += offset.c;
 
-    // Raycast from head in direction
-    // Check against all other IDLE arrows
+        // Check if out of bounds (Escaped!)
+        if (currentPos.r < 0 || currentPos.r >= rows || currentPos.c < 0 || currentPos.c >= cols) {
+            return false; // Not blocked, path is clear to edge
+        }
 
-    // This requires the grid dimensions which are in store. 
-    // But for a pure function we might need to pass them or just check intersection with other segments.
+        // Check collision with other arrows
+        for (const other of allArrows) {
+            if (other.id === targetArrow.id) continue; // Skip self
+            if (other.state === 'moving') continue; // Moving arrows don't block
 
-    // Let's implement a robust geometric check here later.
-    // For now, assume valid for UI testing.
-    return false;
+            for (const seg of other.segments) {
+                if (seg.r === currentPos.r && seg.c === currentPos.c) {
+                    return true; // Blocked by this segment
+                }
+            }
+        }
+    }
+
+    return false; // Should theoretically hit wall first, but safe fallback
 }
