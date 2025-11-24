@@ -122,6 +122,4 @@ const getRotation = (dir: string): number => {
         default: return 0;
     }
 };
-        </motion.g >
-    );
-};
+
