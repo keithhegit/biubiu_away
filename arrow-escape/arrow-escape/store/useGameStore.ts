@@ -4,6 +4,7 @@ import { Arrow, GameState, Point, Direction } from '../types';
 import { generateLevel } from '../utils/generator';
 import { getDistanceToArrow } from '../utils/geometry';
 import { DIR_OFFSETS } from '../constants';
+import * as Sound from '../utils/sound';
 
 interface GameStore extends GameState {
     // Actions
@@ -75,8 +76,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 status: state.hp - 1 <= 0 ? 'lost' : 'playing'
             }));
 
-            // Play error sound (placeholder for now, or use Sound util if available)
-            // Sound.playError(); 
+            // Play error sound
+            Sound.playError();
 
             // Reset stuck state after animation
             setTimeout(() => {
@@ -93,7 +94,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             const newArrows = [...arrows];
             newArrows[arrowIndex] = { ...arrow, state: 'moving' };
             set({ arrows: newArrows });
-            // Sound.playSwoosh();
+            Sound.playSwoosh();
         }
     },
 
@@ -145,7 +146,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             // Check win condition
             if (newArrows.length === 0) {
                 set({ status: 'won' });
-                // Sound.playWin();
+                Sound.playWin();
             }
         }
     }
