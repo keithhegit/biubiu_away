@@ -68,7 +68,10 @@ export const GameTile: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
                 strokeLinejoin="round"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                transition={{
+                    pathLength: { duration: 0.5, ease: "easeInOut" },
+                    d: { duration: 0 }
+                }}
                 style={{ transform: 'translate(2px, 2px)' }}
             />
 
@@ -82,7 +85,10 @@ export const GameTile: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
                 strokeLinejoin="round"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                transition={{
+                    pathLength: { duration: 0.5, ease: "easeInOut" },
+                    d: { duration: 0 }
+                }}
             />
 
             {/* Arrow Head (Simple Circle or Triangle at the start) */}

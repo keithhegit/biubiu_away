@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { Arrow, GameState, Point, Direction } from '../types';
 import { generateLevel } from '../utils/generator';
@@ -11,17 +12,21 @@ interface GameStore extends GameState {
     updateGameLoop: () => void;
     setZoom: (scale: number) => void;
     resetLevel: () => void;
+    lastMoveTime: number;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
     // Initial State
     level: 1,
     hp: 3,
+    maxHp: 3,
     status: 'playing',
-    grid: { rows: 12, cols: 9 },
+    gridRows: 12,
+    gridCols: 9,
     arrows: [],
     score: 0,
     timeElapsed: 0,
+    lastMoveTime: 0,
 
     // Actions
     loadLevel: (level: number) => {
@@ -29,10 +34,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({
             level,
             hp: 3,
+            maxHp: 3,
             status: 'playing',
-            grid: { rows, cols },
+            gridRows: rows,
+            gridCols: cols,
             arrows,
-            timeElapsed: 0
+            timeElapsed: 0,
+            lastMoveTime: 0
         });
     },
 
@@ -42,9 +50,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     setZoom: (scale: number) => {
-        // This might be UI state, but keeping it here for now or separate UI store
-        // Actually, zoom is better in a separate UI store or local state if it doesn't affect logic
-        // For now, let's keep it out of game logic store to keep it pure
+        // UI state
     },
 
     clickArrow: (arrowId: string) => {
@@ -57,11 +63,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const arrow = arrows[arrowIndex];
         if (arrow.state !== 'idle') return;
 
-        // Logic to check if path is clear
-        // ... (Reuse logic from useGameLogic)
-        // For now, let's just implement the basic state transition
-        // We need to port the full collision logic here
-
         // Simplified collision check for this step
         const isBlocked = checkCollision(arrow, arrows);
 
@@ -72,7 +73,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             set(state => ({
                 arrows: newArrows,
                 hp: Math.max(0, state.hp - 1),
-                status: state.hp - 1 <= 0 ? 'game_over' : 'playing'
+                status: state.hp - 1 <= 0 ? 'lost' : 'playing'
             }));
 
             // Reset stuck state after animation
@@ -94,8 +95,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     updateGameLoop: () => {
-        const { status, arrows, grid } = get();
+        const { status, arrows, gridRows, gridCols, lastMoveTime } = get();
         if (status !== 'playing') return;
+
+        const now = performance.now();
+        const MOVE_INTERVAL = 50; // ms per step
+
+        if (now - lastMoveTime < MOVE_INTERVAL) return;
 
         let hasMoving = false;
         let needsUpdate = false;
@@ -104,20 +110,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
             if (arrow.state !== 'moving') return arrow;
 
             hasMoving = true;
+
+            // Snake Movement Logic (Crawling)
             const offset = DIR_OFFSETS[arrow.direction];
-            const speed = 0.5; // Movement speed
+            const currentHead = arrow.segments[0];
+            const newHead = { r: currentHead.r + offset.r, c: currentHead.c + offset.c };
 
-            // Update all segments
-            const newSegments = arrow.segments.map(seg => ({
-                r: seg.r + offset.r * speed,
-                c: seg.c + offset.c * speed
-            }));
+            // Add new head, remove tail
+            const newSegments = [newHead, ...arrow.segments.slice(0, -1)];
 
-            // Check if head is out of bounds (plus some buffer)
-            const head = newSegments[0];
-            const isOut = head.r < -5 || head.r > grid.rows + 5 || head.c < -5 || head.c > grid.cols + 5;
+            // Check if ENTIRE snake is out of bounds
+            const isOffScreen = newSegments.every(seg =>
+                seg.r < 0 || seg.r >= gridRows || seg.c < 0 || seg.c >= gridCols
+            );
 
-            if (isOut) {
+            if (isOffScreen) {
                 needsUpdate = true;
                 return null; // Mark for removal
             }
@@ -127,7 +134,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }).filter(Boolean) as Arrow[];
 
         if (needsUpdate) {
-            set({ arrows: newArrows });
+            set({
+                arrows: newArrows,
+                lastMoveTime: now
+            });
 
             // Check win condition
             if (newArrows.length === 0) {
