@@ -1,41 +1,66 @@
 import React from 'react';
-import { useGameLogic } from './hooks/useGameLogic';
-import { Header } from './components/Header';
 import { GameBoard } from './components/GameBoard';
-import { Overlays } from './components/Overlays';
+import { useGameStore } from './store/useGameStore';
 
 const App: React.FC = () => {
-  const { gameState, handleArrowClick, retryLevel, nextLevel } = useGameLogic();
+  const { level, hp, score, status } = useGameStore();
 
   return (
-    <div className="flex flex-col h-full w-full bg-paper">
-      <Header 
-        level={gameState.level} 
-        hp={gameState.hp} 
-        maxHp={gameState.maxHp} 
-        timeElapsed={gameState.timeElapsed}
-      />
-      
-      <main className="flex-1 relative overflow-hidden">
-        <GameBoard 
-          gameState={gameState} 
-          onArrowClick={handleArrowClick} 
-        />
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50">
+      {/* Header */}
+      <header className="flex-none h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-20">
+        <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <span>🎯</span> Arrow Escape
+        </h1>
 
-        {(gameState.status === 'won' || gameState.status === 'lost') && (
-          <Overlays 
-            status={gameState.status}
-            score={gameState.score}
-            level={gameState.level}
-            onRetry={retryLevel}
-            onNext={nextLevel}
-          />
-        )}
+        <div className="flex items-center gap-6 text-sm font-medium text-slate-600">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">LEVEL</span>
+            <span className="text-lg text-slate-900">{level}</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <span key={i} className={`text-xl ${i < hp ? 'text-red-500' : 'text-slate-200'}`}>
+                ♥
+              </span>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">SCORE</span>
+            <span className="text-lg text-slate-900">{score}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Game Area */}
+      <main className="flex-1 relative overflow-hidden">
+        <GameBoard />
       </main>
 
-      <div className="text-center text-xs text-gray-300 py-1 absolute bottom-1 w-full pointer-events-none">
-        Arrow Elimination v1.0
-      </div>
+      {/* Game Over / Win Overlay */}
+      {status !== 'playing' && (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 animate-in fade-in zoom-in duration-300">
+            <div className="text-6xl mb-4">
+              {status === 'won' ? '🎉' : '💔'}
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              {status === 'won' ? 'Level Complete!' : 'Game Over'}
+            </h2>
+            <p className="text-slate-500 mb-6">
+              {status === 'won' ? 'Great job! Ready for the next challenge?' : 'Don\'t give up! Try again.'}
+            </p>
+            <button
+              onClick={() => useGameStore.getState().resetLevel()}
+              className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors shadow-lg shadow-blue-600/20"
+            >
+              {status === 'won' ? 'Next Level' : 'Try Again'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

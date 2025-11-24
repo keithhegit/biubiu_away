@@ -44,7 +44,7 @@ export const generateLevel = (level: number): { arrows: Arrow[], rows: number, c
     // Gigantic (Level 31-50)
     rows = 50; cols = 30;
     targetSnakes = 130 + (level - 31) * 5; // Up to ~225 snakes!
-    maxLen = 25; turnChance = 0.7;
+    maxLen = 50; turnChance = 0.7;
   }
 
   // Cap target snakes to avoid infinite loops if grid is too full
