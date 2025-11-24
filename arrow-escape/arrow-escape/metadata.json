@@ -1,0 +1,5 @@
+{
+  "name": "Arrow Escape",
+  "description": "A puzzle game where you untangle arrows by guiding them off the screen. Similar to picking sticks but with snake-like movement mechanics.",
+  "requestFramePermissions": []
+}
