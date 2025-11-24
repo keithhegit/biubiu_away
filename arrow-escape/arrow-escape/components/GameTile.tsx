@@ -93,13 +93,35 @@ export const GameTile: React.FC<Props> = ({ arrow, cellSize, onClick }) => {
 
             {/* Arrow Head (Simple Circle or Triangle at the start) */}
             {/* Since segments[0] is the head */}
-            <circle
-                cx={(arrow.segments[0].c + 0.5) * cellSize}
-                cy={(arrow.segments[0].r + 0.5) * cellSize}
-                r={cellSize * 0.2}
+            {/* Arrow Head - Directional Indicator */}
+            <motion.path
+                d={`M 0 ${-cellSize * 0.25} L ${cellSize * 0.2} ${cellSize * 0.25} L ${-cellSize * 0.2} ${cellSize * 0.25} Z`}
                 fill="white"
-                opacity={0.8}
+                opacity={0.9}
+                initial={{ rotate: 0, scale: 0 }}
+                animate={{
+                    rotate: getRotation(arrow.direction),
+                    scale: 1
+                }}
+                style={{
+                    x: (arrow.segments[0].c + 0.5) * cellSize,
+                    y: (arrow.segments[0].r + 0.5) * cellSize,
+                }}
             />
         </motion.g>
+    );
+};
+
+// Helper for rotation
+const getRotation = (dir: string): number => {
+    switch (dir) {
+        case 'UP': return 0;
+        case 'RIGHT': return 90;
+        case 'DOWN': return 180;
+        case 'LEFT': return 270;
+        default: return 0;
+    }
+};
+        </motion.g >
     );
 };
